@@ -36,33 +36,44 @@ static bool multiplication_will_overflow(uint32_t a, uint32_t b) {
     return b != 0 && a > std::numeric_limits<uint32_t>::max() / b;
 }
 
-static uint32_t from_string_to_hz(std::string_view input) {
+static uint32_t from_string_to_hz(std::string_view input, std::string_view& error) {
     uint32_t digit{};
     auto [ptr, er]{std::from_chars(input.begin(), input.end(), digit)};
-    if(er != std::errc()) return 0;
+    if(er != std::errc()){
+        error = "Frequency: not found digits into input";
+        return 0;  
+    } 
     input.remove_prefix(ptr - input.data());
     while (!input.empty()&& isspace(input.front())) {
         input.remove_prefix(1);
     }
     if (input.size() == 3 && tolower(input[0]) == 'm' && tolower(input[1]) == 'h' && tolower(input[2]) == 'z') {
         if (multiplication_will_overflow(digit, 1000000) || (digit * 1000000 > 200000000))
+        {
+            error = "Frequency: overfilling";
             return 0;
+        }
         else
             return digit * 1000000;
     }
     if (input.size() == 3  && tolower(input[0]) == 'k' && tolower(input[1]) == 'h' && tolower(input[2]) == 'z') {
-        if (multiplication_will_overflow(digit, 1000) || digit * 1000 > 200000000)
+        if (multiplication_will_overflow(digit, 1000) || digit * 1000 > 200000000){
+            error = "Frequency: overfilling";
             return 0;
+        }
         else
             return digit * 1000;
     }
     
     if (input.size() == 2  && tolower(input[0]) == 'h' && tolower(input[1]) == 'z') {
-        if (digit > 200000000)
+        if (digit > 200000000){
+            error = "Frequency: overfilling";
             return 0;
+        }
         else
             return digit;
     }
+    error = "Frequency: not found suffix";
     return 0;
 }
 
@@ -103,7 +114,7 @@ logic_an_input parse_cin() {
                 break;
             }
             input = std::string_view{buffer.data()};
-            result.hz = from_string_to_hz(input);
+            result.hz = from_string_to_hz(input, input);
             if (result.hz == 0) {
                 std::cout
                     << "Your input contains an error.\r\nIt can be not correct sufix or to big num, please try again\r\n";
@@ -135,4 +146,74 @@ logic_an_input parse_cin() {
             return result;
         }
     }
+}
+
+
+bool confirm_channel(std::string_view line, logic_an_input &input, std::string_view& error_message){
+    auto [ptr, er] = std::from_chars(line.begin(), line.end(), input.channel);
+    if(ptr == line.end() && er == std::errc()){
+        if(input.channel > 28){
+            error_message = "CHANNEL: Your input isn't in range";
+            input.channel = 29;
+            return false;
+        }
+        error_message = "";
+        return true;
+    }
+    else {
+        error_message = "CHANNEL: Your input contains incorrect symbols";
+        input.channel = 29;
+    }
+    return false;
+}
+
+bool confirm_freq(std::string_view line, logic_an_input &input, std::string_view& error_message){
+    input.hz = from_string_to_hz(line, error_message);
+    if(input.hz != 0){
+        error_message = "";
+        return true;
+    }
+    return false;
+}
+
+bool confirm_samples(std::string_view line, logic_an_input &input, std::string_view& error_message){
+    std::string temp_line{line};
+    std::erase_if(temp_line, [](char x){return (x == ',');});
+    line = temp_line;
+    auto [ptr, er] = std::from_chars(line.begin(), line.end(), input.samples);
+    if(ptr == line.end() && er == std::errc()){
+        if(input.samples > 1'000'000){
+            error_message = "SAMPLES: Your input isn't in range";
+            input.samples = 0;
+            return false;
+        }
+        error_message = "";
+        return true;
+    }
+    else {
+        error_message = "SAMPLES: Your input contains incorrect symbols";
+        input.samples = 0;
+    }
+    return false;
+}
+
+bool confirm_vcd(std::string_view line, std::string_view& error_message){
+    if(line.size() > 255){
+        error_message = "OUTPUT: Too long name for file";
+        return false;
+    }
+    std::string_view forbidden_symbols{"/*?<>|$"};
+    
+    for(auto v : line){
+        if(isspace(v) || forbidden_symbols.find(v) != std::string_view::npos){
+            error_message = "OUTPUT: Forbiddem symbol";
+            return false;
+        }
+    }
+    if(!line.ends_with(".vcd")){
+        error_message = "OUTPUT: File name doesnt end with .vcd";
+        return false;
+    }
+    error_message = "";
+    return true;
 }

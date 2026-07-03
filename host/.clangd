@@ -1,2 +1,4 @@
 CompileFlags:
   CompilationDatabase: ../build-host
+  Add:
+  - -std=c++20

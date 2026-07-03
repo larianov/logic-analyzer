@@ -1,5 +1,8 @@
 #include <cstdint>
+#include <ftxui/component/app.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <string>
+#include <string_view>
 #include "elements_of_ui.hpp"
 
 
@@ -15,7 +18,7 @@ ftxui::Element static sizing(ftxui::Element el, int8_t w, int8_t h){
     return el;
 }
 
-ftxui::Element make_layout(const logic_an_input &input, const status_conf &status, const ftxui::Component& channel_input, const ftxui::Component& freq_input, const ftxui::Component& sample_input){
+ftxui::Element make_layout(const logic_an_input &input, const status_conf &status, const ftxui::Component& channel_input, const ftxui::Component& freq_input, const ftxui::Component& sample_input, const ftxui::Component& output_input, std::string_view error_input){
     auto left_content = ftxui::vbox({
         ftxui::hbox({
             ftxui::text("Channel [0-28]: "),
@@ -40,7 +43,10 @@ ftxui::Element make_layout(const logic_an_input &input, const status_conf &statu
     auto right_content = ftxui::vbox({
         ftxui::text(std::format("Device: {}", status.dev_con ?"connected":"disconnected")),
         ftxui::text(std::format("Capture: {}", status.cap_status())),
-        ftxui::text(std::format("Output: {}", status.name_of_file)),
+        ftxui::hbox({
+            ftxui::text("Output: "),
+            output_input->Render(),
+        }),
     });
 
     right_content = make_central(right_content);
@@ -53,7 +59,7 @@ ftxui::Element make_layout(const logic_an_input &input, const status_conf &statu
         ftxui::text("Tab / Shift+Tab: change field"),
         ftxui::text("Enter: confirm field"),
         ftxui::text("Ctrl+R: start recording"),
-        ftxui::text("q: quit")
+        ftxui::text("Ctrl+Q: quit")
     });
     control_content = make_central(control_content);
     auto control_box = ftxui::vbox({
@@ -63,7 +69,7 @@ ftxui::Element make_layout(const logic_an_input &input, const status_conf &statu
     });
     control_box = sizing(control_box, 30, 1);
     
-        auto error_content = ftxui::text("");
+    auto error_content = ftxui::text(error_input);
     error_content = make_central(error_content);
     auto error_box = ftxui::vbox({
         ftxui::center(ftxui::bold(ftxui::text("Errors"))),
