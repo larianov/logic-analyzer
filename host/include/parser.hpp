@@ -16,7 +16,7 @@ bool confirm_freq(std::string_view line, logic_an_input &input, std::string_view
 
 bool confirm_samples(std::string_view line, logic_an_input &input, std::string_view &error_message);
 
-bool confirm_vcd(std::string_view line, std::string_view &error_message);
+bool confirm_fst(std::string_view line, std::string_view &error_message);
 
 bool prepare_capture(std::string_view channel_placeholder, std::string_view frequency_placeholder,
                      std::string_view samples_placeholder, std::string_view output, std::string_view &error,

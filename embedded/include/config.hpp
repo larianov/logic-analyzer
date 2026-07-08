@@ -33,7 +33,7 @@ enum class capturing : std::uint8_t {
 struct status_conf {
     bool dev_con;
     capturing cap_status_;
-    std::string_view name_of_file = "capture.vcd";
+    std::string_view name_of_file = "capture.fst";
     [[nodiscard]] std::string_view cap_status() const {
         switch (cap_status_) {
         case capturing::IDLE:

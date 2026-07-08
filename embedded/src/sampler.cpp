@@ -7,6 +7,7 @@
 #include <pico/platform/common.h>
 #include <pico/time.h>
 #include <span>
+#include "hardware/sync.h"
 
 void Sampler::init(const logic_an_input inpt) {
     inpt_for_sampling = inpt;
@@ -24,11 +25,12 @@ void Sampler::init(const logic_an_input inpt) {
 
 void Sampler::start_sampling() {
     auto next = get_absolute_time();
-    const auto start_time = next;
+    uint32_t ints = save_and_disable_interrupts();      
     for (uint32_t i{}; i < inpt_for_sampling.samples; i++) {
         next = delayed_by_us(next, tact_time);
         busy_wait_until(next);
         samples_[i] = gpio_get(inpt_for_sampling.channel);
     }
+    restore_interrupts(ints);
     still_measuring = false;
 }

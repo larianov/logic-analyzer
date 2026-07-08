@@ -191,7 +191,7 @@ bool confirm_samples(std::string_view line, logic_an_input &input, std::string_v
     return false;
 }
 
-bool confirm_vcd(std::string_view line, std::string_view &error_message) {
+bool confirm_fst(std::string_view line, std::string_view &error_message) {
     if (line.size() > 255) {
         error_message = "OUTPUT: Too long name for file";
         return false;
@@ -204,8 +204,8 @@ bool confirm_vcd(std::string_view line, std::string_view &error_message) {
             return false;
         }
     }
-    if (!line.ends_with(".vcd")) {
-        error_message = "OUTPUT: File name doesnt end with .vcd";
+    if (!line.ends_with(".fst")) {
+        error_message = "OUTPUT: File name doesnt end with .fst";
         return false;
     }
     error_message = "";
@@ -221,7 +221,7 @@ bool prepare_capture(std::string_view channel_placeholder, std::string_view freq
         return false;
     } else if (!confirm_samples(samples_placeholder, input, error)) {
         return false;
-    } else if (!confirm_vcd(output, error)) {
+    } else if (!confirm_fst(output, error)) {
         return false;
     }
     return true;

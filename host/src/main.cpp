@@ -19,7 +19,8 @@
 #include "elements_of_ui.hpp"
 #include "parser.hpp"
 #include "pico_connect.hpp"
-#include "vcd_parser.hpp"
+#include "fst_parser.hpp"
+
 
 static ftxui::InputOption make_input_options() {
     ftxui::InputOption options;
@@ -47,7 +48,7 @@ int main() {
     std::string channel_placeholder;
     std::string frequency_placeholder;
     std::string samples_placeholder;
-    std::string output{"capture.vcd"};
+    std::string output{"capture.fst"};
     std::string_view error_message{};
 
     auto channel_opt = make_input_options();
@@ -59,7 +60,7 @@ int main() {
 
     auto output_opt = make_input_options();
     output_opt.on_enter = [&] {
-        if (confirm_vcd(output, error_message))
+        if (confirm_fst(output, error_message))
             selected_input = 3;
     };
     auto output_inp = ftxui::Input(&output, "", output_opt);
@@ -95,7 +96,7 @@ int main() {
             still_capturing = false;
             auto result_of_parsing = rpl.getter();
             if (result_of_parsing)
-                vcd_parse(result_of_parsing.value());
+                // fst_parse(result_of_parsing.value());
             return true;
         }
         if (ev == ftxui::Event::Special("Capture unsuccess")) {
