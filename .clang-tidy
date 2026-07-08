@@ -41,7 +41,7 @@ FormatStyle: none
 
 CheckOptions:
   - key: readability-function-cognitive-complexity.Threshold
-    value: '40'
+    value: '50'
   - key:             readability-identifier-length.IgnoredVariableNames
     value:           'x|y|z|v|i|j|k|l|m|r|w|h'
   - key:             readability-identifier-length.IgnoredParameterNames

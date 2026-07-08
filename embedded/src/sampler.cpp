@@ -1,5 +1,4 @@
 #include <hardware/timer.h>
-#include <iostream>
 #include "sampler.hpp"
 #include "config.hpp"
 #include <cstdint>
@@ -12,7 +11,6 @@
 void Sampler::init(const logic_an_input inpt) {
     inpt_for_sampling = inpt;
     tact_time = 1'000'000 / inpt_for_sampling.hz;
-    std::cout << tact_time << '\n';
     gpio_init(inpt_for_sampling.channel);
     gpio_set_dir(inpt_for_sampling.channel, GPIO_IN);
 }
@@ -21,8 +19,7 @@ void Sampler::init(const logic_an_input inpt) {
     if (still_measuring) {
         return std::nullopt;
     }
-    std::span<const uint8_t> packet = samples_;
-    return packet.first(inpt_for_sampling.samples);
+    return std::span<const uint8_t>{samples_.data(), inpt_for_sampling.samples};
 }
 
 void Sampler::start_sampling() {

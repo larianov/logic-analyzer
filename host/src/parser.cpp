@@ -139,7 +139,7 @@ logic_an_input parse_cin() {
         if (std::cin.eof()) {
             std::cout << "You pressed unavaliable key-bind for this CLI, by default we use channel 15, Freq: 100 Mhz, "
                          "and 100,000 samples, sorry for inconvient behaviour\r\n";
-            result = {.channel = 15, .hz = 100000000, .samples = 100000};
+            result = {.msg = 6, .channel = 15, .hz = 100000000, .samples = 100000};
             return result;
         }
     }

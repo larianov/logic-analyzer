@@ -1,7 +1,6 @@
 add_executable(logic_analyzer
     src/main.cpp
     src/sampler.cpp
-    src/parser.cpp
 )
 
 target_include_directories(logic_analyzer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

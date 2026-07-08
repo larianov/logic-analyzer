@@ -10,6 +10,7 @@ add_executable(logic_analyzer_host
     src/main.cpp
     src/elements_of_ui.cpp
     src/pico_connect.cpp
+    src/vcd_parser.cpp
     src/parser.cpp
 )
 target_include_directories(logic_analyzer_host
