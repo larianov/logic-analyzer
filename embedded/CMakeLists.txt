@@ -1,7 +1,6 @@
 add_executable(logic_analyzer
     src/main.cpp
     src/sampler.cpp
-    #src/pio.cpp
 )
 pico_generate_pio_header(logic_analyzer ${CMAKE_CURRENT_SOURCE_DIR}/src/read_pin.pio)
 
@@ -22,6 +21,7 @@ target_link_libraries(logic_analyzer
                             hardware_pwm
                             hardware_pll
                             hardware_pio
+                            hardware_dma
                             )
 
 pico_add_extra_outputs(logic_analyzer)

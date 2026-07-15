@@ -47,7 +47,7 @@ int main() {
     std::string channel_placeholder{};
     std::string frequency_placeholder{};
     std::string samples_placeholder{};
-    std::string output{};
+    std::string output{"capture.fst"};
     std::string_view error_message{};
 
     auto channel_opt = make_input_options();

@@ -1,6 +1,5 @@
 #include "termios.h"
 #include "pico_connect.hpp"
-
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -10,10 +9,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
-
 #include <thread>
 #include <chrono>
-
 #include <unistd.h>
 #include <dirent.h>
 

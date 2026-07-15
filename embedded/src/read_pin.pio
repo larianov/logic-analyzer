@@ -6,8 +6,11 @@ fast_entry:
 .wrap
 
 slow_entry:
+    pull block
+    mov y, osr
+slow_loop:
     mov x, y
 delay_loop:
     jmp x-- delay_loop
     in pins, 8
-    jmp slow_entry
+    jmp slow_loop

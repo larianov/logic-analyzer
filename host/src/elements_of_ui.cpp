@@ -28,7 +28,7 @@ ftxui::Element make_layout(const logic_an_input &input, const status_conf &statu
             channel_input->Render(),
         }),
         ftxui::hbox({
-            ftxui::text("Frequency [1 Hz-100 MHz]: "),
+            ftxui::text("Frequency [1 Hz-200 MHz]: "),
             freq_input->Render(),
         }),
         ftxui::hbox({

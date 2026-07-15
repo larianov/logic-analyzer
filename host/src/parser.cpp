@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include "parser.hpp"
 #include "iostream"
@@ -163,7 +165,6 @@ bool confirm_channel(std::string_view line, logic_an_input &input, std::string_v
         error_message = "CHANNEL: Your input is empty";
         return false;
     }
-
     std::size_t chin = line.find_first_not_of(' ');
     if (chin == std::string_view::npos) {
         error_message = "CHANNEL: Your input is empty";
@@ -180,6 +181,10 @@ bool confirm_channel(std::string_view line, logic_an_input &input, std::string_v
     if(!handling_char_conv(temp_str, input.channel, error_message)) return false;
     if (input.channel > 28) {
         error_message = "CHANNEL: Out of range, range[0-28]";
+        return false;
+    }
+    if (input.channel > 22 && input.channel < 26) {
+        error_message = "CHANNEL: Logic anayzer doesn't support 23-25 gpio pins, if you want you can comment this in parser.cpp";
         return false;
     }
     if (chin == std::string_view::npos){
@@ -200,6 +205,12 @@ bool confirm_channel(std::string_view line, logic_an_input &input, std::string_v
     if((input.channel + input.amm) > 28){
         error_message = "CHANNEL: Channel Range overflowed 28 channels";
         return false;
+    }
+    for (uint8_t i{}; i <= input.amm ; i++) {
+        if (auto temp = input.channel+i; temp >= 23 && temp <= 25) {
+            error_message = "CHANNEL: Logic anayzer doesn't support 23-25 gpio pins, if you want you can comment this in parser.cpp";
+            return false;
+        }
     }
     error_message  = "";
     return true;

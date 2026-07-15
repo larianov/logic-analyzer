@@ -4,4 +4,4 @@
 #include <vector>
 #include "../../embedded/include/config.hpp"
 void fst_parse(std::span<const uint8_t> to_parse, const logic_an_input &config, const std::string &name_of_file);
-static constexpr uint64_t step_fs = 142843750;
+static constexpr uint64_t step_fs = 5'000'000; //142'843'750;

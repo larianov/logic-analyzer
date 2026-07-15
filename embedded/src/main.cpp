@@ -21,33 +21,46 @@
 #include <unistd.h>
 #include "config.hpp"
 #include "sampler.hpp"
+#include "hardware/vreg.h"
+
+
+static void init_pwm(uint8_t pwm, uint8_t freq_mhz){
+    auto slice = pwm_gpio_to_slice_num(pwm);
+    auto config = pwm_get_default_config();
+    auto sys_clck = clock_get_hz(clk_sys);
+    auto wrap_val = (sys_clck / (freq_mhz*1'000'000)) - 1;
+    auto level_val = (wrap_val + 1) / 2;
+    pwm_config_set_wrap(&config, wrap_val);
+    pwm_config_set_clkdiv(&config, 1.0F);
+    gpio_set_function(pwm, GPIO_FUNC_PWM);
+    pwm_init(slice, &config, true);
+    pwm_set_gpio_level(pwm, level_val);
+}
 
 Sampler smp;
-
 int main() {
-
+    vreg_set_voltage(VREG_VOLTAGE_1_15);
+    sleep_ms(150);
     set_sys_clock_hz(200'000'000, true);
     stdio_init_all();
     sleep_ms(500);
     while (!stdio_usb_connected()) {
         tight_loop_contents();
+        
     }
     stdio_set_translate_crlf(&stdio_usb, false);
-
-    auto slice = pwm_gpio_to_slice_num(15);
-    auto config = pwm_get_default_config();
-    auto sys_clck = clock_get_hz(clk_sys);
-    auto wrap_val = (sys_clck / 100000) - 1;
-    auto level_val = (wrap_val + 1) / 2;
-    pwm_config_set_wrap(&config, wrap_val);
-    gpio_set_function(15, GPIO_FUNC_PWM);
-    pwm_init(slice, &config, true);
-    pwm_set_gpio_level(15, level_val);
-
+    init_pwm(28, 1);
+    init_pwm(27, 2);
+    init_pwm(26, 5);
+    init_pwm(22, 10);
+    init_pwm(21, 20);
+    init_pwm(20, 25);
+    init_pwm(19, 40);
+    init_pwm(18, 50);
+    printf("actual clk_sys: %lu Hz\n", clock_get_hz(clk_sys));
     for (;;) {
         logic_an_input result{};
         while (true) {
-            smp.init(result); 
             int fsymbol = getchar_timeout_us(0);
             if (fsymbol == PICO_ERROR_TIMEOUT) {
                 tight_loop_contents();
@@ -67,7 +80,7 @@ int main() {
                         break;
                     }
                 }
-                if (result.samples < 200'001 && result.hz < 100'000'001 && result.msg == 6 && result.amm < 7) {
+                if (result.samples < 200'001 && result.hz < 200'000'001 && result.msg == 6 && result.amm < 8) {
                     putchar(ping::READY_CONFIG);
                     fflush(stdout);
                     break;
@@ -76,6 +89,7 @@ int main() {
             }
         }
         sleep_ms(2);
+        smp.init(result);
         smp.start_sampling();
         auto x = smp.samples();
         
