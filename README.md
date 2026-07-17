@@ -11,7 +11,7 @@ signals up to 200 MHz and exports them to GTKWave.**
 [![Output](https://img.shields.io/badge/output-FST%20%2F%20GTKWave-orange)](https://gtkwave.sourceforge.net/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](https://opensource.org/license/mit)
 
-![Logic Analyzer capture](docs/hero.mp4)
+![Logic Analyzer capture](docs/hero_web.mp4)
 
 </div> 
 
