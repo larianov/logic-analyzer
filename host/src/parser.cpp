@@ -2,16 +2,19 @@
 #include <array>
 #include <cmath>
 #include "parser.hpp"
+#include "elements_of_ui.hpp"
 #include "iostream"
 #include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace aur {
 bool getline(std::span<char> buffer) {
@@ -245,7 +248,7 @@ bool confirm_fst(std::string_view line, std::string_view &error_message) {
 bool prepare_capture(std::string_view channel_placeholder, std::string_view frequency_placeholder,
                      std::string_view samples_placeholder, std::string_view output, std::string_view &error,
                      logic_an_input &input) {
-    if (error == "WARNING: Capture time exceeds 10s. Press Ctrl+R again to confirm.") {
+    if (error == "WARNING: Capture time exceeds 10s.\nPress Ctrl+R again to confirm.") {
         error = "";
         return true;
     }
@@ -258,9 +261,59 @@ bool prepare_capture(std::string_view channel_placeholder, std::string_view freq
     } else if (!confirm_fst(output, error)) {
         return false;
     }
-    if ((((1.0F / static_cast<float>(input.hz)) * static_cast<float>(input.samples)) > 10) ) {
-        error = "WARNING: Capture time exceeds 10s. Press Ctrl+R again to confirm.";
+    if ((((1.0F / static_cast<float>(input.hz)) * static_cast<float>(input.samples)) > 10)) {
+        error = "WARNING: Capture time exceeds 10s.\nPress Ctrl+R again to confirm.";
         return false;
     }
+    return true;
+}
+
+bool confirm_instance(std::vector<t_decoders>&ver, std::string& ch1placeholder, std::string& ch2placeholder, std::string& ch3placeholder, uint8_t used_channels, logic_an_input& input, std::string_view& error_for_dec, c_decoders ix){
+    t_decoders to_ret{.code = c_decoders::ERROR, .first_ch = 29, .second_ch = 29, .third_ch = std::nullopt};
+    auto rem_chan = input.amm+1 - used_channels;
+    if ((ix == c_decoders::I2C || ix == c_decoders::UART) && rem_chan < 2 ) {
+        error_for_dec = "For protocols I2C or UART you need minimum 2 free channels.";
+        return false;
+    }
+    else if (ix == c_decoders::SPI && rem_chan < 3) {
+        error_for_dec = "For protocols SPI you need minimum 3 free channels.";
+        return false;
+    }
+    
+    to_ret.code = ix;
+    if(handling_char_conv(ch1placeholder, to_ret.first_ch, error_for_dec)) return false;
+    
+    if(handling_char_conv(ch2placeholder, to_ret.second_ch, error_for_dec)) return false;
+    
+    if (ix == c_decoders::SPI) {
+        if(handling_char_conv(ch3placeholder, to_ret.third_ch.value(), error_for_dec)) return false;
+    }
+    if (to_ret.first_ch == 29 || to_ret.second_ch == 29 || (ix == c_decoders::SPI && !to_ret.third_ch.has_value())) {
+        error_for_dec = "All fields should be initialized.";
+        return false;
+    }
+    for(auto x : ver){
+        if (to_ret.first_ch == x.first_ch || to_ret.first_ch == x.second_ch || (x.third_ch.has_value() && x.third_ch.value() == to_ret.first_ch)) {
+            error_for_dec = "Your input for first channel is already used.\n Please use another channel.";
+            return false;
+        }
+        if (to_ret.second_ch == x.first_ch || to_ret.second_ch == x.second_ch || (x.third_ch.has_value() && x.third_ch.value() == to_ret.second_ch)) {
+            error_for_dec = "Your input for second channel is already used.\n Please use another channel.";
+            return false;
+        }
+        if (to_ret.third_ch.has_value() && (to_ret.third_ch.value() == x.first_ch || to_ret.third_ch.value() == x.second_ch || (x.third_ch.has_value() && x.third_ch.value() == to_ret.third_ch.value()))) {
+            error_for_dec = "Your input for third channel is already used.\n Please use another channel.";
+            return false;
+        }
+    }
+    if (to_ret.first_ch < input.channel || to_ret.first_ch > input.channel+input.amm ) {
+        error_for_dec = "Your input out of range of your choosen range of channels";
+        return false;
+    }
+    if (to_ret.first_ch == to_ret.second_ch || (to_ret.third_ch.has_value() && (to_ret.second_ch == to_ret.third_ch.value() || to_ret.first_ch == to_ret.third_ch.value()))) {
+        error_for_dec = "Your channels are repeating. All channels should be different";
+        return false;
+    }
+    ver.emplace_back(to_ret);
     return true;
 }

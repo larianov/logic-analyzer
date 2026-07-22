@@ -1,6 +1,9 @@
+#include <cstdint>
 #include <cstdio>
 #include <fcntl.h>
+#include <ftxui/screen/color.hpp>
 #include <thread>
+#include <tuple>
 #include <unistd.h>
 #include <format>
 #include <ftxui/component/component.hpp>
@@ -17,6 +20,7 @@
 #include <utility>
 #include "../../embedded/include/config.hpp"
 #include <locale>
+#include <vector>
 #include "elements_of_ui.hpp"
 #include "parser.hpp"
 #include "pico_connect.hpp"
@@ -49,7 +53,94 @@ int main() {
     std::string frequency_placeholder{};
     std::string samples_placeholder{};
     std::string output{"capture.fst"};
+    bool modal_is_open{};
     std::string_view error_message{};
+    std::string_view error_for_dec{};
+    std::vector<std::string_view> decoders_names{"I2C", "SPI", "UART"};
+    uint8_t used_channels{};
+    int selected_decoder{};
+    std::string dec1ch_placeholder{};
+    auto de1ch_opt = make_input_options();
+    auto de1ch_inputu = ftxui::Input(&dec1ch_placeholder, "", de1ch_opt);
+
+    std::string dec2ch_placeholder{};
+    auto de2ch_opt = make_input_options();
+    auto de2ch_inputu = ftxui::Input(&dec2ch_placeholder, "", de2ch_opt);
+
+    std::string dec3ch_placeholder{};
+    auto de3ch_opt = make_input_options();
+    auto de3ch_inputu = ftxui::Input(&dec3ch_placeholder, "", de3ch_opt);
+
+    std::vector<t_decoders> decoders;
+
+    auto toggle = ftxui::Toggle(decoders_names, &selected_decoder);
+    bool show_third{};
+    auto maybe_third = ftxui::Maybe(de3ch_inputu, &show_third);
+    auto last_decoder = selected_decoder;
+    auto vertical = ftxui::Container::Vertical({toggle, de1ch_inputu, de2ch_inputu, maybe_third});
+    auto renderer_vert = ftxui::Renderer(vertical, [&]() {
+        if (last_decoder != selected_decoder) error_for_dec = "";
+        show_third = decoders_names[selected_decoder] == "SPI";
+        auto remaining = (1 + inpt.amm) - used_channels;
+        auto i2c_box = ftxui::vbox(ftxui::hbox(ftxui::text("SDA: "), de1ch_inputu->Render()),
+                                   ftxui::hbox(ftxui::text("SCL: "), de2ch_inputu->Render()));
+
+        auto uart_box = ftxui::vbox(ftxui::hbox(ftxui::text("RX: "), de1ch_inputu->Render()),
+                                    ftxui::hbox(ftxui::text("TX: "), de2ch_inputu->Render()));
+
+        auto spi_box = ftxui::vbox(ftxui::hbox(ftxui::text("MOSI: "), de1ch_inputu->Render()),
+                                   ftxui::hbox(ftxui::text("MISO: "), de2ch_inputu->Render()),
+                                   ftxui::hbox(ftxui::text("SCK: "), maybe_third->Render()));
+
+        ftxui::Element fields_box;
+        if (decoders_names[selected_decoder] == "I2C")
+            fields_box = i2c_box;
+        else if (decoders_names[selected_decoder] == "UART")
+            fields_box = uart_box;
+        else
+            fields_box = spi_box;
+
+        auto box = ftxui::vbox(
+            {ftxui::text(" Select Decoder ") | ftxui::bold | ftxui::center, ftxui::separator(),
+             ftxui::hbox(ftxui::text(std::format("Remaining channels: {}", remaining)) | ftxui::center, ftxui::filler(),
+                         ftxui::separator(), ftxui::filler(), ftxui::text("\'q\' for quitting") | ftxui::center,
+                         ftxui::filler()),
+             ftxui::separator(), toggle->Render(), fields_box, ftxui::separator(),
+             ftxui::hbox(ftxui::text("Errors: "), ftxui::text(error_for_dec) | ftxui::color(ftxui::Color::Red))});
+        box |= ftxui::size(ftxui::WIDTH, ftxui::GREATER_THAN, 55);
+        box |= ftxui::size(ftxui::HEIGHT, ftxui::GREATER_THAN, 8);
+        box = box | ftxui::border | ftxui::clear_under | ftxui::center;
+        last_decoder = selected_decoder;
+        return box;
+    });
+
+    auto app_vert = ftxui::CatchEvent(renderer_vert, [&](ftxui::Event ev){
+        if (ev == ftxui::Event::CtrlS) {
+            auto ix = c_decoders::ERROR;
+            if (decoders_names[selected_decoder] == "I2C")
+                ix = c_decoders::I2C;
+            if (decoders_names[selected_decoder] == "UART")
+                ix = c_decoders::UART;
+
+            if (decoders_names[selected_decoder] == "SPI")
+                ix = c_decoders::SPI;
+
+            if (confirm_instance(decoders, dec1ch_placeholder, dec2ch_placeholder, dec3ch_placeholder, used_channels, inpt, error_for_dec, ix)) {
+                if (ix == c_decoders::SPI) used_channels +=3;
+                else used_channels+=2;
+                modal_is_open = false;
+                return true;
+            }
+            return true;
+        }
+        if (ev == ftxui::Event::q) {
+            error_for_dec = "";
+            modal_is_open = false;
+            return true;
+        }
+
+        return false;
+    });
 
     auto channel_opt = make_input_options();
     channel_opt.on_enter = [&] {
@@ -89,6 +180,7 @@ int main() {
         inputs, [&] { return make_layout(inpt, stats, channel_inp, freq_inp, sample_inp, output_inp, error_message); });
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
     auto exit = screen.ExitLoopClosure();
+
     auto app = ftxui::CatchEvent(renderer, [&](ftxui::Event ev) {
         if (ev == ftxui::Event::Special("Capture success")) {
             stats.cap_status_ = capturing::DONE;
@@ -133,9 +225,19 @@ int main() {
                 }
             }
             return true;
+        } else if (ev == ftxui::Event::CtrlA) {
+            if (!confirm_channel(channel_placeholder, inpt, error_message))
+                return false;
+            modal_is_open = true;
+            return true;
+        } else if (ev == ftxui::Event::CtrlX) {
+            used_channels = 0;
+            decoders.clear();
+            return true;
         } else {
             return false;
         }
     });
-    screen.Loop(app);
+    auto modal = ftxui::Modal(app, app_vert, &modal_is_open);
+    screen.Loop(modal);
 }

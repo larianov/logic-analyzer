@@ -1,4 +1,5 @@
 #pragma once
+#include "elements_of_ui.hpp"
 #include "../../embedded/include/config.hpp"
 #include <cstdint>
 #include <string_view>
@@ -21,3 +22,5 @@ bool confirm_fst(std::string_view line, std::string_view &error_message);
 bool prepare_capture(std::string_view channel_placeholder, std::string_view frequency_placeholder,
                      std::string_view samples_placeholder, std::string_view output, std::string_view &error,
                      logic_an_input &input);
+
+bool confirm_instance(std::vector<t_decoders>&ver, std::string& ch1placeholder, std::string& ch2placeholder, std::string& ch3placeholder, uint8_t used_channels, logic_an_input& input, std::string_view& error_for_dec, c_decoders ix);
